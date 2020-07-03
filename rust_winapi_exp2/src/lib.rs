@@ -9,26 +9,12 @@ extern crate kernel32;
 use std::ffi::OsStr;
 use std::os::windows::ffi::OsStrExt;
 use std::iter::once;
-use std::{mem, ptr};
+use std::{ptr};
 use std::ptr::null_mut;
-use std::io::Error;
-use std::io::{stdin, stdout, Read, Write};
 
-use self::winapi::HWND;
 use self::user32::MessageBoxW;
-use self::winapi::HMODULE;
-use self::winapi::MB_OK;
-use self::winapi::DWORD;
-use self::kernel32::GetCurrentProcessId;
-use self::winapi::HANDLE;
-use self::kernel32::OpenProcess;
-use self::winapi::{PROCESS_QUERY_INFORMATION, PROCESS_VM_READ};
-use self::winapi::FALSE;
-use self::kernel32::K32EnumProcessModules;
-use std::borrow::BorrowMut;
-use self::winapi::MAX_PATH;
-use self::kernel32::K32GetModuleBaseNameW;
-use self::winapi::minwindef;
+use self::kernel32::{GetCurrentProcessId,OpenProcess,K32EnumProcessModules,K32GetModuleBaseNameW};
+use self::winapi::{PROCESS_QUERY_INFORMATION, PROCESS_VM_READ, FALSE, HMODULE, MB_OK, DWORD, HANDLE};
 
 fn win32_string(value : &str ) -> Vec<u16> {
     OsStr::new( value ).encode_wide().chain( once( 0 ) ).collect()
@@ -58,7 +44,7 @@ pub extern "system" fn DllMain(
 fn enum_processes() {
     let pid: DWORD;
     let handle: HANDLE;
-    let mut cbNeeded: DWORD = 0;
+    let mut cb_needed: DWORD = 0;
 
     unsafe {
         let sizeof_hmodule = std::mem::size_of::<HMODULE>();
@@ -68,8 +54,8 @@ fn enum_processes() {
             PROCESS_VM_READ, FALSE, pid);
 
         let mut modules = {
-            K32EnumProcessModules(handle, ptr::null_mut(), 0, &mut cbNeeded);
-            let num_entries_needed = cbNeeded as usize / sizeof_hmodule;
+            K32EnumProcessModules(handle, ptr::null_mut(), 0, &mut cb_needed);
+            let num_entries_needed = cb_needed as usize / sizeof_hmodule;
             let mut modules = Vec::<HMODULE>::with_capacity(num_entries_needed);
             modules.resize(num_entries_needed, ptr::null_mut());
             modules
@@ -77,7 +63,7 @@ fn enum_processes() {
 
         {
             let mut bytes_fetched: DWORD = 0;
-            let ret = K32EnumProcessModules(
+            K32EnumProcessModules(
                 handle,
                 modules.as_mut_ptr(),
                 (modules.len() * sizeof_hmodule) as u32,
@@ -102,6 +88,4 @@ fn enum_processes() {
             }
         }
     }
-
-
 }
